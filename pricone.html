@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>test</title>
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+	<script>
+	  	jQuery( document ).ready( function( $ ) {
+	  		$("#manifest").change(getContents);
+	  		$("#pool").change(getHash);
+	  	} );
+	  	let cdnAddr = "";
+	  	let manifestBase = "";
+	  	let bdlBase = "";
+	  	let poolBase = "";
+	  	var result;
+	  	var poolResult;
+
+	  	function getResource() {
+	  		var guess = $("#resource")[0].value;
+	  		//console.log(guess);
+	  		getManifest(guess);
+	  	}
+
+	  	function getCDN(json) {
+	  		if (!json || !json.content || !json.content.appOption || !json.content.appOption.cdnAddr)
+	  			return [];
+	  		return json.content.appOption.cdnAddr;
+	  	}
+
+		async function findServer() {
+		  	const resp = await fetch('https://infodesk-zinny3.game.kakao.com/v2/app?appId=235375&appVer=3.4.2&market=googlePlay&sdkVer=3.10.2&os=android&lang=ko&osVer=7.0.1&country=kr');
+		  	const data = await resp.json();
+		  	cdnAddr = getCDN(data);
+		  	$("#serverName").text(cdnAddr);
+		}
+
+		function getManifest(guess) {
+			manifestBase = cdnAddr + "dl/Resources/" + guess + "/Kor/AssetBundles/Android/";
+			bdlBase = cdnAddr + "dl/Bundles/" + "3.4.5" + "/Kor/AssetBundles/Android/";
+			poolBase = cdnAddr + "dl/pool/AssetBundles/";
+			let manifestUrl = manifestBase + "manifest/manifest_assetmanifest";
+
+			console.log(manifestUrl);
+			//const resp = await fetch(manifestUrl);
+		}
+
+		function getContents(evt) {
+			var fr = new FileReader();
+			var files = evt.target.files;
+			fr.onload = function() {
+				result = fr.result;
+				result.split("\n").forEach(
+					element => {
+						if (element.includes("bdl_")) {
+							console.log(bdlBase + element.split(",")[0])
+						} else {
+							console.log(manifestBase + element.split(",")[0])
+						}
+					}
+				);
+				$("#content").text(result);
+
+			}
+			fr.readAsText(files[0]);
+		}
+
+		function getHash(evt) {
+			var fr = new FileReader();
+			var files = evt.target.files;
+			fr.onload = function () {
+				poolResult = fr.result;
+				poolResult.split("\n").forEach(
+					element => {
+						const hash = element.split(",")[1];
+						console.log(poolBase + hash.slice(0, 2) + "/" + hash);
+					}
+				);
+				$("#poolText").text(poolResult);
+			}
+			fr.readAsText(files[0]);
+		}
+
+
+</script>
+
+</head>
+<body>
+	<div>
+		<button onclick="findServer();">get server</button>
+		<p id="serverName"></p>
+	</div>
+	<div>
+		<input type="text" name="resource"  id="resource"/>
+		<button onclick="getResource();">get</button>
+	</div>
+	<br>
+	<div>
+		<input type="file" name="manifest" id="manifest">
+		<p id="content"></p>
+	</div>
+	<br>
+	<div>
+		<input type="file" name="pool" id="pool">
+		<p id="poolText"></p>
+	</div>
+</body>
+</html>
